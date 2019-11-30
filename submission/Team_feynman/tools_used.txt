@@ -1,0 +1,14 @@
+FOR MACHINE TRANSLATION
+
+Neural Machine Translation.ipynb file can open by jupyter notebook 
+to get jupyter notebook 
+	pip install jupter
+
+Shastra 2020 - PDF file contains the flowchart
+
+text_to_csv.py - this file will be used to setup dataset after downloading it from https://www.statmt.org/europarl/ french to english should be downloaded.
+
+SpaCy and also the downloaded en and fr api for SpaCy for tokenization
+pytorch 1.3.0
+torchtext 0.4
+dill
