@@ -6,6 +6,11 @@ import re
 
 dataset_dir = os.path.join('..','..','Dataset')
 cv_dir = os.path.join(dataset_dir, 'Common voice')
+chars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', \
+         'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', \ 
+         'y', 'z', ' ', '_']
+tokens = [i for i in range(len(chars))]
+tokenize_dict = {c:t for c,t in zip(chars, tokens)}
 
 
 def create_dirs(lang):
@@ -21,6 +26,12 @@ def create_dirs(lang):
     except FileExistsError:
         pass
     return lang_dir, train_dir, test_dir
+
+
+def process_sent(s):
+    s = s.lower()
+    s = s.translate(str.maketrans('', '', string.punctuation))
+    return [tokenize_dict[c] for c in s]
 
 
 def parse_df(df, lan, lang_dir, save_dir):
@@ -41,7 +52,7 @@ def parse_df(df, lan, lang_dir, save_dir):
                 clip_name = f'{lan}_{i}.wav'
                 save_clip_dir = os.path.join(save_dir, clip_name)
                 convert_to_wav(clips_dir, clip, save_clip_dir)
-                data.append((clip_name, sent))
+                data.append((clip_name, process_sent(sent)))
                 i += 1 # update counter
         except FileNotFoundError:
             pass
