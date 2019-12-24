@@ -1,6 +1,7 @@
 import os
 import datetime
 import torch
+import random
 import pandas as pd
 
 import torch.nn as nn
@@ -8,28 +9,71 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
-from data import SpeechDataset, CHARS
+from data import SpeechDataset, AudioDataLoader
 from listener import Listener
 from attend_and_spell import AttendAndSpell
 from seq2seq import Seq2Seq
-from utils import collate_fn, train
+from utils import  train
 
+
+
+def get_chars(lang, train_df=None):
+
+    if lang=='eng':
+        chars = ['<sos>', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', \
+                'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', \
+                'y', 'z', ' ', "'", '<eos>', '<pad>']
+    elif lang=='chinese':
+        chars = [' ', '<sos>']
+        for idx in range(train_df.shape[0]):
+            _, sent = train_df.iloc[idx]
+            for c in sent:
+                if c not in chars:
+                    chars.append(c)
+        chars = chars + ['<eos>', '<pad>', '<unk>']        
+    else:
+        raise NotImplementedError
+    
+    print('Number of chars', len(chars))
+    return chars
 
 
 if __name__ == "__main__":
     
     
+    dataset_dir = '../../../Dataset/aishell_chinese_dataset/dataset'
     DEVICE = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
-    train_df = pd.read_csv('train_df.csv', names=['id', 'sent'])
-    test_df = pd.read_csv('test_df.csv', names=['id', 'sent'])
-    dataset_dir = 'dataset'
-
+    print('DEVICE :', DEVICE)
+    
+    # data = []
+    # files = os.listdir(dataset_dir)
+    # for f in files:
+    #     if '.txt' in f:
+    #         with open(os.path.join(dataset_dir, f), 'r') as text:
+    #             data.append((f.replace('.txt', ''), text.readline()))
+                
+    # train_df = pd.DataFrame(data, columns=['id', 'sent'])
+    # train_df.to_csv(os.path.join(dataset_dir, 'train_df.csv'), header=None)
+    # print(train_df.head())
+     
+    train_df = pd.read_csv(os.path.join(dataset_dir, 'train_df.csv'), names=['id', 'sent'])
+    print(train_df.head())
+    # test_df = pd.read_csv('test_df.csv', names=['id', 'sent'])
+    
+    
+    chars = get_chars('chinese', train_df)
+    char_to_token = {c:i for i,c in enumerate(chars)} 
+    token_to_char = {i:c for c,i in char_to_token.items()}
+    sos_token = char_to_token['<sos>']
+    eos_token = char_to_token['<eos>']
+    pad_token = char_to_token['<pad>']
+   
     tensorboard_dir = os.path.join('tb_summary')
-    train_dataset = SpeechDataset(train_df, dataset_dir)
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
+    train_dataset = SpeechDataset(train_df, dataset_dir, sos_token, char_to_token, eos_token)
+    train_loader = AudioDataLoader(pad_token, train_dataset, batch_size=32, shuffle=True)
 
-    test_dataset = SpeechDataset(test_df, dataset_dir)
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
+    #test_dataset = SpeechDataset(test_df, dataset_dir)
+    #test_loader = DataLoader(test_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
 
     input_size = 128    # num rows in instagram
     hidden_dim = 64    # 256*2 nodes in each LSTM
@@ -40,11 +84,11 @@ if __name__ == "__main__":
 
     hid_sz = 64
     embed_dim = 15
-    vocab_size = len(CHARS)
+    vocab_size = len(chars)
     decoder = AttendAndSpell(embed_dim, hid_sz, encoder.output_size, vocab_size)
 
     criterion = nn.CrossEntropyLoss()
-    model = Seq2Seq(encoder, decoder, criterion, tf_ratio = 1.0, device=DEVICE) 
+    model = Seq2Seq(encoder, decoder, criterion, tf_ratio = 1.0, device=DEVICE).to(DEVICE)
 
 
     # Let's start training
@@ -53,7 +97,7 @@ if __name__ == "__main__":
     optimizer = optim.Adadelta(model.parameters())
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.98)
     log_interval = 5
-    print_interval = 40
+    print_interval = 10
 
     summary_dir = os.path.join(tensorboard_dir, str(datetime.datetime.now()))
     print("summary dir:", summary_dir)

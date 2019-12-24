@@ -3,26 +3,6 @@ import datetime
 import numpy as np
 from torch.nn.utils.rnn import pad_sequence
 
-from data import pad_token
-
-def collate_fn(data):
-    """
-        overwriting collate_fn method, to pad the
-        different length audio present in dataset
-
-        #TODO : Implement BucketIterator, to load
-                samples, with same length together
-    """
-    specgrams = [x.squeeze(0).permute(1, 0) for (x, y) in data]
-    targets = [y for (x, y) in data]
-    X = pad_sequence(specgrams).permute(1, 0, 2)    # (N, T, H)
-    Y = pad_sequence(targets, padding_value=pad_token).permute(1, 0)         # (N, L)
-    return X, Y
-
-    # If using ctc loss: sort, pack, pad_packed, returns -> packed, true_lengths
-    # X, Y = zip(*sorted(zip(specgrams, targets),     # sort w.r.t to timesteps in spectrogram
-    #                     key=lambda x:x[0].shape[2], 
-    #                     reverse=True))
 
 def train(model, device, train_loader, optimizer, epoch, print_interval, writer=None, log_interval=-1):
     

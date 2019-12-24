@@ -3,22 +3,10 @@ import torch
 import torchaudio
 from torchaudio.transforms import MelSpectrogram
 from torch.utils.data import Dataset, DataLoader
-
-
-CHARS = ['<sos>', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', \
-        'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', \
-        'y', 'z', ' ', "'", '<eos>', '<pad>']
-
-char_to_token = {c:i for i,c in enumerate(CHARS)} 
-token_to_char = {i:c for c,i in char_to_token.items()}
-
-
-sos_token = char_to_token['<sos>']
-eos_token = char_to_token['<eos>']
-pad_token = char_to_token['<pad>']
+from torch.nn.utils.rnn import pad_sequence
 
 class SpeechDataset(Dataset):
-    def __init__(self, df, data_dir):
+    def __init__(self, df, data_dir, sos_token, char_to_token, eos_token):
         """
             df - dataframe from which clips have to be loaded
             data_dir - directory where clips are stored
@@ -26,13 +14,16 @@ class SpeechDataset(Dataset):
         self.df = df
         self.data_dir = data_dir
         self.specgram = MelSpectrogram()  # returns spectogram of raw audio
-      
+        self.sos_token = sos_token
+        self.char_to_token = char_to_token
+        self.eos_token = eos_token
+
     def __len__(self):
         return self.df.shape[0]
     
     def __getitem__(self, idx):
         # preparing audio data
-        filename = os.path.join(self.data_dir, self.df['id'].iloc[idx])+'.flac'
+        filename = os.path.join(self.data_dir, self.df['id'].iloc[idx])+'.wav'
         waveform, sample_rate = torchaudio.load(filename)
         x = self.specgram(waveform)
 
@@ -43,5 +34,38 @@ class SpeechDataset(Dataset):
 
         # preparing target
         sent = self.df['sent'].iloc[idx].lower().replace('\n', '')
-        y = torch.tensor([sos_token] + [char_to_token[c] for c in sent] + [eos_token])
+        tokenized_sent = []
+        for c in sent:
+            try:
+                tokenized_sent.append(char_to_token[c])
+            except:
+                tokenized_sent.append(self.char_to_token['<unk>'])
+        y = torch.tensor([self.sos_token] + tokenized_sent + [self.eos_token])
         return X, y
+
+  
+class AudioDataLoader(DataLoader):
+
+    def __init__(self, pad_token, *args, **kwargs):
+        super(AudioDataLoader, self).__init__(*args, **kwargs, collate_fn=self.my_collate_fn)
+        self.pad_token = kwargs.get('pad_token', 0)
+
+    
+    def my_collate_fn(self, data):
+        """
+            overwriting collate_fn method, to pad the
+            different length audio present in dataset
+
+            #TODO : Implement BucketIterator, to load
+                    samples, with same length together
+        """
+        specgrams = [x.squeeze(0).permute(1, 0) for (x, y) in data]
+        targets = [y for (x, y) in data]
+        X = pad_sequence(specgrams).permute(1, 0, 2)    # (N, T, H)
+        Y = pad_sequence(targets, padding_value=self.pad_token).permute(1, 0)         # (N, L)
+        return X, Y
+
+        # If using ctc loss: sort, pack, pad_packed, returns -> packed, true_lengths
+        # X, Y = zip(*sorted(zip(specgrams, targets),     # sort w.r.t to timesteps in spectrogram
+        #                     key=lambda x:x[0].shape[2], 
+        #                     reverse=True))
