@@ -1,2 +1,4 @@
 __pycache__/
 tb_summary/
+.ipynb_checkpoints/
+Trained_models/

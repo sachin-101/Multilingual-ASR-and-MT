@@ -16,7 +16,6 @@ from listener import Listener
 from attend_and_spell import AttendAndSpell
 from seq2seq import Seq2Seq
 from utils import  train
-from torchviz import make_dot
 
 
 def get_chars(lang, save_file=None, train_df=None):
@@ -143,7 +142,7 @@ if __name__ == "__main__":
 
     
     epochs = 20
-    load = True
+    load = False
     if load:
         saved_file = 'Trained Models/Training_2019-12-25 00:09:23.921978/las_model_6'
         model.load_state_dict(torch.load(saved_file))
@@ -159,7 +158,7 @@ if __name__ == "__main__":
     except FileExistsError:
         pass
 
-    TRAIN = False
+    TRAIN = True
     
     if TRAIN:
         summary_dir = os.path.join(tensorboard_dir, time)
