@@ -61,7 +61,7 @@ if __name__ == "__main__":
     train_df = train_df.dropna(how='any')
     # test_df = pd.read_csv('test_df.csv', names=['id', 'sent'])
     
-    save_file = os.path.join('Trained Models', 'chars')
+    save_file = os.path.join('train_utils', 'chars')
     with open(save_file, 'rb') as f:
             chars = pickle.load(f) # load file
     char_to_token = {c:i for i,c in enumerate(chars)} 

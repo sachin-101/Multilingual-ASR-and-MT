@@ -102,7 +102,7 @@ if __name__ == "__main__":
     print(train_df.head())
     # test_df = pd.read_csv('test_df.csv', names=['id', 'sent'])
     
-    save_file = os.path.join('Trained Models', 'chars')
+    save_file = os.path.join('Trained_models', 'chars')
     chars = get_chars('chinese', save_file, train_df)
     char_to_token = {c:i for i,c in enumerate(chars)} 
     token_to_char = {i:c for c,i in char_to_token.items()}
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     epochs = 20
     load = True
     if load:
-        saved_file = 'Trained Models/Training_2019-12-25 00:09:23.921978/las_model_6'
+        saved_file = 'Trained_models/Training_2019-12-25 00:09:23.921978/las_model_6'
         model.load_state_dict(torch.load(saved_file))
         start_epoch = int(saved_file[-1]) + 1
         time = os.listdir(tensorboard_dir)[-1]  # use the last one
@@ -153,7 +153,7 @@ if __name__ == "__main__":
         start_epoch = 0
         time = str(datetime.datetime.now())
 
-    save_dir = os.path.join('Trained Models', f'Training_{time}')
+    save_dir = os.path.join('Trained_models', f'Training_{time}')
     try:    
         os.mkdir(save_dir);
     except FileExistsError:
