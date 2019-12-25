@@ -34,13 +34,7 @@ class SpeechDataset(Dataset):
 
         # preparing target
         sent = self.df['sent'].iloc[idx].lower().replace('\n', '')
-        tokenized_sent = []
-        for c in sent:
-            try:
-                tokenized_sent.append(char_to_token[c])
-            except:
-                tokenized_sent.append(self.char_to_token['<unk>'])
-        y = torch.tensor([self.sos_token] + tokenized_sent + [self.eos_token])
+        y = torch.tensor([self.sos_token] + [self.char_to_token[c] for c in sent] + [self.eos_token])
         return X, y
 
   
