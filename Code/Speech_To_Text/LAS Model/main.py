@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
     
     epochs = 20
-    load = True
+    load = False
     if load:
         saved_file = 'Trained_models/Training_2019-12-25 00:09:23.921978/las_model_6'
         model.load_state_dict(torch.load(saved_file))
@@ -159,7 +159,7 @@ if __name__ == "__main__":
     except FileExistsError:
         pass
 
-    TRAIN = False
+    TRAIN = True
     
     if TRAIN:
         summary_dir = os.path.join(tensorboard_dir, time)
