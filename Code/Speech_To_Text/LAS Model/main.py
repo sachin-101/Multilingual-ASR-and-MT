@@ -16,7 +16,7 @@ from listener import Listener
 from attend_and_spell import AttendAndSpell
 from seq2seq import Seq2Seq
 from utils import  train
-from torchviz import make_dot
+
 
 
 def get_chars(lang, save_file=None, train_df=None):
@@ -75,7 +75,7 @@ def decode_true_sent(y):
 
 
 # Used for ai_shell dataset, when all sentences are in a single text file
-def read_transcrpt(transcript_dir):
+def read_transcript(transcript_dir):
     transcript_dir = '../../../Dataset'
     with open(os.path.join(transcript_dir, 'aishell_transcript_v0.8.txt')) as f:
         data_list = f.readlines()
