@@ -38,5 +38,4 @@ class Seq2Seq(nn.Module):
             loss += self.loss(y_out, y_true)
             teacher_force = random.random() < self.tf_ratio
             y_in = y_true if teacher_force else y_out.max(dim=1)[1]
-        loss = loss/Ty  # Length normalization
         return loss, output

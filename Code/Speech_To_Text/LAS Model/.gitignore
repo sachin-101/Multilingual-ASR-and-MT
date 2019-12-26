@@ -1,4 +1,6 @@
 __pycache__/
 tb_summary/
 .ipynb_checkpoints/
-Trained_models/
+trained_models_cv/
+trained_models_librispeech/
+trained_models_mandarin/

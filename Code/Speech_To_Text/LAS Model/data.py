@@ -6,7 +6,7 @@ from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 
 class SpeechDataset(Dataset):
-    def __init__(self, df, data_dir, sos_token, char_to_token, eos_token):
+    def __init__(self, df, data_dir, sos_token, char_to_token, eos_token, device, file_extension='.wav'):
         """
             df - dataframe from which clips have to be loaded
             data_dir - directory where clips are stored
@@ -17,15 +17,17 @@ class SpeechDataset(Dataset):
         self.sos_token = sos_token
         self.char_to_token = char_to_token
         self.eos_token = eos_token
-
+        self.file_extension = file_extension
+        self.device = device
+        
     def __len__(self):
         return self.df.shape[0]
     
     def __getitem__(self, idx):
         # preparing audio data
-        filename = os.path.join(self.data_dir, self.df['id'].iloc[idx])+'.wav'
+        filename = os.path.join(self.data_dir, self.df['id'].iloc[idx])+self.file_extension
         waveform, sample_rate = torchaudio.load(filename)
-        x = self.specgram(waveform)
+        x = self.specgram(waveform).to(self.device)
 
         X = x.log2().clamp(min=-50) # avoid log(0)=-inf
         # Normalize input
@@ -34,7 +36,13 @@ class SpeechDataset(Dataset):
 
         # preparing target
         sent = self.df['sent'].iloc[idx].lower().replace('\n', '')
-        y = torch.tensor([self.sos_token] + [self.char_to_token[c] for c in sent] + [self.eos_token])
+        tokens = []
+        for c in sent:
+            try:
+                tokens.append(self.char_to_token[c])
+            except:
+                tokens.append(self.char_to_token['<unk>'])
+        y = torch.tensor([self.sos_token] + tokens + [self.eos_token])
         return X, y
 
   
