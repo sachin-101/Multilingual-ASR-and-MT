@@ -6,30 +6,28 @@ from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 
 class SpeechDataset(Dataset):
-    def __init__(self, df, data_dir, sos_token, char_to_token, eos_token, device, file_extension='.wav'):
+    def __init__(self, df, data_dir, char_to_token, file_ext='.wav', n_fft=2048, hop_length=512):
         """
             df - dataframe from which clips have to be loaded
             data_dir - directory where clips are stored
         """
         self.df = df
         self.data_dir = data_dir
-        self.specgram = MelSpectrogram()  # returns spectogram of raw audio
-        self.sos_token = sos_token
         self.char_to_token = char_to_token
-        self.eos_token = eos_token
-        self.file_extension = file_extension
-        self.device = device
+        self.file_ext = file_ext
+        
+        self.specgram = MelSpectrogram(n_fft=n_fft, hop_length=hop_length)  
+
         
     def __len__(self):
         return self.df.shape[0]
     
     def __getitem__(self, idx):
         # preparing audio data
-        filename = os.path.join(self.data_dir, self.df['id'].iloc[idx])+self.file_extension
+        filename = os.path.join(self.data_dir, self.df['id'].iloc[idx])+self.file_ext
         waveform, sample_rate = torchaudio.load(filename)
-        x = self.specgram(waveform).to(self.device)
+        X = self.specgram(waveform)
 
-        X = x.log2().clamp(min=-50) # avoid log(0)=-inf
         # Normalize input
         X = (X - X.mean())
         X = X/X.abs().max()
@@ -42,7 +40,7 @@ class SpeechDataset(Dataset):
                 tokens.append(self.char_to_token[c])
             except:
                 tokens.append(self.char_to_token['<unk>'])
-        y = torch.tensor([self.sos_token] + tokens + [self.eos_token])
+        y = torch.tensor([self.char_to_token['<sos>']] + tokens + [self.char_to_token['<eos>']])
         return X, y
 
   
