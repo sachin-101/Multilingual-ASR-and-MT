@@ -20,19 +20,21 @@ def parse_args():
     parser.add_argument("--first_ten", type=int, default=0)
     return parser.parse_args()
 
-def load_model(load_dir, epoch, vocab_size, device):
-    with open(os.path.join(load_dir, 'info.txt'), 'rb') as f:
+def load_model(load_dir, epoch, device):
+    with open(os.path.join(load_dir, 'info.pickle'), 'rb') as f:
         hparams = pickle.load(f)    # load model info
     
     print('embed_dim',hparams['embed_dim'])
     print('hidden_dim', hparams['hidden_dim'])
     print('hidden_sz',hparams['hid_sz'])
+    print('vocab_size', hparams['vocab_size'])
+
     encoder = Listener(hparams['input_size'], hparams['hidden_dim'], 
                         hparams['num_layers'], dropout=hparams['dropout'], 
                         layer_norm=hparams['layer_norm'])
 
     decoder = AttendAndSpell(hparams['embed_dim'], hparams['hid_sz'], 
-                            encoder.output_size, vocab_size)
+                            encoder.output_size, hparams['vocab_size'])
 
     criterion = nn.CrossEntropyLoss()
     model = Seq2Seq(encoder, decoder, criterion, tf_ratio = 1.0, device=device).to(device)
@@ -58,18 +60,19 @@ def decode_true_sent(y):
 if __name__ == "__main__":
 
     args = parse_args()
-    dataset_dir = '../../../Dataset/LibriSpeech/dataset'
-    DEVICE = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
+    root_dir = '../../../Dataset/LibriSpeech/'
+    DEVICE = torch.device('cuda:6') if torch.cuda.is_available() else 'cpu'
     
-    train_df = pd.read_csv(os.path.join(dataset_dir, 'train_df.csv'), names=['id', 'sent'])
+    train_df = pd.read_csv(os.path.join(root_dir, 'train_100.csv'), names=['path', 'sent'])
+    print(train_df.head(2))
     train_df = train_df.dropna(how='any')
     # test_df = pd.read_csv('test_df.csv', names=['id', 'sent'])
     
     save_file = os.path.join('train_utils', 'chars')
     chars = ['<sos>', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', \
                 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', \
-                'y', 'z', ' ', "'", '<eos>', '<pad>']
-    print('vocab_size', len(chars), type(chars))
+                'y', 'z', ' ', "'", '<eos>', '<pad>', '<unk>']
+    print('vocab_size : : ', len(chars), type(chars))
     char_to_token = {c:i for i,c in enumerate(chars)} 
     token_to_char = {i:c for c,i in char_to_token.items()}
     sos_token = char_to_token['<sos>']
@@ -78,7 +81,7 @@ if __name__ == "__main__":
     # #test_dataset = SpeechDataset(test_df, dataset_dir)
     # #test_loader = DataLoader(test_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
 
-    model = load_model(args.load_dir, args.epoch, vocab_size=len(chars), device=DEVICE)
+    model = load_model(args.load_dir, args.epoch,  device=DEVICE)
     
     num_sent = 10
     model.eval()
@@ -90,7 +93,7 @@ if __name__ == "__main__":
             idx = i
         else:
             idx = random.randint(0, train_df.shape[0])
-        trial_dataset = SpeechDataset(train_df, dataset_dir, sos_token, char_to_token, eos_token, file_extension='.flac')
+        trial_dataset = SpeechDataset(train_df, root_dir,  char_to_token)
 
         x, y = trial_dataset.__getitem__(idx)
         # plt.imshow(x[0,:,:].detach())
