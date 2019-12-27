@@ -39,7 +39,7 @@ class SpeechDataset(Dataset):
                 tokens.append(self.char_to_token[c])
             except:
                 tokens.append(self.char_to_token['<unk>'])
-        y = torch.tensor([self.char_to_token['<sos>']] + tokens + [self.char_to_token['<eos>']])
+        y = torch.tensor(tokens + [self.char_to_token['<eos>']])
         return X, y
 
   

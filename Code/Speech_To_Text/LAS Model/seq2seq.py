@@ -22,7 +22,7 @@ class Seq2Seq(nn.Module):
         loss = 0.0
 
         N = data.shape[0]   # batch size
-        y_in = target[:,0]   # <sos>
+        y_in = torch.zeros((N)).to(self.device, dtype=torch.int64)  # <sos>
         hidden_prev = [ ( torch.zeros((N, self.decoder.hid_sz)).to(self.device), 
                           torch.zeros((N, self.decoder.hid_sz)).to(self.device)  ),
                        ( torch.zeros((N, self.decoder.hid_sz)).to(self.device), 
@@ -32,7 +32,7 @@ class Seq2Seq(nn.Module):
 
         output = []
         for t in range(0, Ty):
-            y_true = target[:, t]          
+            y_true = target[:, t]   
             y_out, hidden_prev, context = self.decoder(y_in, hidden_prev, encoder_output, context)
             output.append(y_out)
             loss += self.loss(y_out, y_true)
