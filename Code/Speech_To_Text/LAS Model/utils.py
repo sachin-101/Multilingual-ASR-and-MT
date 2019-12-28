@@ -20,7 +20,7 @@ def train(model, device, train_loader, optimizer, epoch, print_interval, writer=
         loss.backward()
         optimizer.step()
 
-        running_loss.append(loss.detach().item()/data.shape[0])    # update running loss
+        running_loss.append(loss.detach().item())    # update running loss
         
         # writing to console after print_interval batches
         if (batch_idx+1) % print_interval == 0:

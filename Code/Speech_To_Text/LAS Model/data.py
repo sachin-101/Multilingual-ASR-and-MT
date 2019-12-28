@@ -28,8 +28,9 @@ class SpeechDataset(Dataset):
         X = self.specgram(waveform)
 
         # Normalize input
-        X = (X - X.mean())
-        X = X/X.abs().max()
+        with torch.no_grad():
+            X = (X - X.mean())
+            X = X/X.abs().max()
 
         # preparing target
         sent = self.df['sent'].iloc[idx]
@@ -39,7 +40,7 @@ class SpeechDataset(Dataset):
                 tokens.append(self.char_to_token[c])
             except:
                 tokens.append(self.char_to_token['<unk>'])
-        y = torch.tensor(tokens + [self.char_to_token['<eos>']])
+        y = torch.tensor(tokens + [self.char_to_token['<eos>']], requires_grad=False)
         return X, y
 
   
