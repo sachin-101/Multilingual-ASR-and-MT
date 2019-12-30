@@ -6,13 +6,14 @@ from torch.utils.data import Dataset, DataLoader
 from torch.nn.utils.rnn import pad_sequence
 
 class SpeechDataset(Dataset):
-    def __init__(self, df, data_dir, char_to_token, n_fft=2048, hop_length=512):
+    def __init__(self, df, data_dir, char_to_token, take_log=True, n_fft=2048, hop_length=512):
         """
             df - dataframe from which clips have to be loaded
             data_dir - directory where clips are stored
         """
         self.df = df
         self.data_dir = data_dir
+        self.take_log = take_log
         self.char_to_token = char_to_token
         
         self.specgram = MelSpectrogram(n_fft=n_fft, hop_length=hop_length)  
@@ -25,7 +26,7 @@ class SpeechDataset(Dataset):
         # preparing audio data
         path = os.path.join(self.data_dir, self.df['path'].iloc[idx])
         waveform, sample_rate = torchaudio.load(path)
-        X = self.specgram(waveform)
+        X = self.specgram(waveform).log2() if self.take_log else self.specgram(wavefrom)
 
         # Normalize input
         with torch.no_grad():
