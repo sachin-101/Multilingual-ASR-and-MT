@@ -2,8 +2,8 @@ import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from listener import Listener
-from attend_and_spell import AttendAndSpell
+from models.las_model.listener import Listener
+from models.las_model.attend_and_spell import AttendAndSpell
 
 class Seq2Seq(nn.Module):
     def __init__(self, encoder, decoder, tf_ratio, device):

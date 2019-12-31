@@ -26,7 +26,10 @@ class SpeechDataset(Dataset):
         # preparing audio data
         path = os.path.join(self.data_dir, self.df['path'].iloc[idx])
         waveform, sample_rate = torchaudio.load(path)
-        X = self.specgram(waveform).log2() if self.take_log else self.specgram(wavefrom)
+        X = self.specgram(waveform)
+        
+        if self.take_log:
+            X = X.log2().clamp(min=-50) # avoid log(0)=-inf
 
         # Normalize input
         with torch.no_grad():
