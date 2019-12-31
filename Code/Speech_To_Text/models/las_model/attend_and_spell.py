@@ -7,7 +7,7 @@ class AttendAndSpell(nn.Module):
         Decodes text from encoded voice
     """
 
-    def __init__(self, embed_dim, hidden_size, encoder_out_size, vocab_size):
+    def __init__(self, hidden_size, encoder_out_size, vocab_size):
         """
             hidden_size: units in LSTM cell
             encoder_out_size: dim of encoder output
@@ -20,16 +20,14 @@ class AttendAndSpell(nn.Module):
         self.n_h = encoder_out_size
         self.hid_sz = hidden_size
         self.vocab_size = vocab_size
-        self.embed_dim = embed_dim
 
         # Note: shape of c : (N, 1, n_h)
         #       shape of s : (N, 1, hid_sz)
-        #       shape of y : (N, 1, embed_dim)
+        #       shape of y : (N, 1, vocab_size)
 
-        self.embedding = nn.Embedding(self.vocab_size, self.embed_dim)
         self.attention_layer = Attention(self.n_h, self.hid_sz)
         
-        self.pre_lstm_cell = nn.LSTMCell(self.n_h + self.embed_dim, self.hid_sz)
+        self.pre_lstm_cell = nn.LSTMCell(self.n_h + self.vocab_size, self.hid_sz)
         self.post_lstm_cell = nn.LSTMCell(self.hid_sz + self.n_h, self.hid_sz)
 
         self.mlp = nn.Sequential(
@@ -45,7 +43,7 @@ class AttendAndSpell(nn.Module):
         """
         # ---------------Attend-------------------#
         # s_i = RNN(y_i-1, c_i-1, s_i-1)
-        yt_prev = self.embedding(yt_prev)
+        yt_prev = F.one_hot(yt_prev, self.vocab_size).to(yt_prev.device, torch.float32)
         rnn_input = torch.cat([yt_prev, c_prev], dim=1)
         h_0, c_0 = self.pre_lstm_cell(rnn_input, hidden_prev[0])
         s_i = h_0
