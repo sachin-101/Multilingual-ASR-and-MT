@@ -2,8 +2,9 @@ import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models.las_model.listener import Listener
-from models.las_model.attend_and_spell import AttendAndSpell
+from models.encoder import Encoder
+from models.decoder import Decoder
+
 
 class Seq2Seq(nn.Module):
     def __init__(self, encoder, decoder, tf_ratio, device):
@@ -43,23 +44,3 @@ class Seq2Seq(nn.Module):
         loss = F.cross_entropy(out.view(N*Ty, -1), target.view(-1))
         return  loss, out
 
-    
-if __name__ == "__main__":
-
-    hid_sz = 10
-    embed_size = 20
-    vocab_size = 5
-    ip_size = 40
-    embed_dim = 10
-
-    encoder = Listener(ip_size, 20, 3)
-    decoder = AttendAndSpell(embed_dim, hid_sz, encoder.output_size, vocab_size)
-
-    X = torch.rand((32, 64, ip_size))
-    Y = torch.randint(0, vocab_size, (32, 15))
-
-    s2s = Seq2Seq(encoder, decoder, tf_ratio=1, device='cpu')
-    loss, pred_out = s2s(X, Y)
-    print(loss)
-    print(pred_out.shape)
-    
