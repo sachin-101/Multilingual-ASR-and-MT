@@ -92,17 +92,17 @@ def read_transcript(transcript_dir):
 
 if __name__ == "__main__":
 
-    dataset_dir = '../../../Dataset/data_aishell'
+    dataset_dir = '../../../../Dataset/data_aishell'
     DEVICE = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
     print('DEVICE :', DEVICE)
     
   
-    train_df = pd.read_csv(os.path.join(dataset_dir, 'train_df.csv'), names=['id', 'sent'])
+    train_df = pd.read_csv(os.path.join(dataset_dir, 'train_df.csv'), names=['path', 'sent'])
     train_df = train_df.dropna(how='any')
     print(train_df.head())
     # test_df = pd.read_csv('test_df.csv', names=['id', 'sent'])
     
-    save_file = os.path.join('Trained_models', 'chars')
+    save_file = os.path.join('save', 'chars')
     chars = get_chars('chinese', save_file, train_df)
     char_to_token = {c:i for i,c in enumerate(chars)} 
     token_to_char = {i:c for c,i in char_to_token.items()}
@@ -110,8 +110,7 @@ if __name__ == "__main__":
     eos_token = char_to_token['<eos>']
     pad_token = char_to_token['<pad>']
    
-    tensorboard_dir = os.path.join('tb_summary')
-    train_dataset = SpeechDataset(train_df, dataset_dir, sos_token, char_to_token, eos_token)
+    train_dataset = SpeechDataset(train_df, dataset_dir, char_to_token)
     train_loader = AudioDataLoader(pad_token, train_dataset, batch_size=32, shuffle=True, drop_last=True)
 
     # #test_dataset = SpeechDataset(test_df, dataset_dir)
@@ -132,8 +131,7 @@ if __name__ == "__main__":
     hyperparams = {'input_size':input_size, 'hidden_dim':hidden_dim, 'num_layers':num_layers,
                     'dropout':dropout, 'layer_norm':layer_norm, 'hid_sz':hid_sz, 'embed_dim':embed_dim}
                         
-    criterion = nn.CrossEntropyLoss()
-    model = Seq2Seq(encoder, decoder, criterion, tf_ratio = 1.0, device=DEVICE).to(DEVICE)
+    model = Seq2Seq(encoder, decoder, tf_ratio=1.0, device=DEVICE).to(DEVICE)
     
     # optimizer = optim.ASGD(model.parameters(), lr=0.2)  # lr = 0.2 used in paper
     optimizer = optim.Adadelta(model.parameters())
@@ -143,17 +141,18 @@ if __name__ == "__main__":
 
     
     epochs = 20
-    load = False
-    if load:
-        saved_file = 'Trained_models/Training_2019-12-25 00:09:23.921978/las_model_6'
-        model.load_state_dict(torch.load(saved_file))
-        start_epoch = int(saved_file[-1]) + 1
-        time = os.listdir(tensorboard_dir)[-1]  # use the last one
-    else:
-        start_epoch = 0
-        time = str(datetime.datetime.now())
-
-    save_dir = os.path.join('Trained_models', f'Training_{time}')
+    # load = False
+    # if load:
+    #     saved_file = 'Trained_models/Training_2019-12-25 00:09:23.921978/las_model_6'
+    #     model.load_state_dict(torch.load(saved_file))
+    #     start_epoch = int(saved_file[-1]) + 1
+    #     time = os.listdir(tensorboard_dir)[-1]  # use the last one
+    # else:
+    #     start_epoch = 0
+    #     time = str(datetime.datetime.now())
+    
+    time = str(datetime.datetime.now())
+    save_dir = os.path.join('save', f'Training_{time}')
     try:    
         os.mkdir(save_dir);
     except FileExistsError:
@@ -162,14 +161,15 @@ if __name__ == "__main__":
     TRAIN = True
     
     if TRAIN:
-        summary_dir = os.path.join(tensorboard_dir, time)
-        writer = SummaryWriter(summary_dir)
+        writer = SummaryWriter(save_dir)
 
+        eg_x, eg_y = next(iter(train_loader))
+        writer.add_graph(model, (eg_x.to(DEVICE), eg_y.to(DEVICE)))
         # Saving hyperparmas
         with open(os.path.join(save_dir, 'info.txt'), 'wb') as f:
             pickle.dump(hyperparams, f)
 
-        for epoch in range(start_epoch, epochs):
+        for epoch in range(epochs):
             print("\nTeacher forcing ratio:", model.tf_ratio)
             train(model, DEVICE, train_loader, optimizer, epoch, print_interval, writer, log_interval)
             scheduler.step()                                    # Decrease learning rate
