@@ -14,24 +14,36 @@ class Listener(nn.Module):
         self.input_size = input_size
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
+        self.b = bidirectional
 
-        # Stacking 3 piBLSTM layers, with 512 nodes(i.e. 256 bidirectional)
-        self.layers = nn.ModuleList()
         
-        input_dim = self.input_size
-        for l in range(num_layers):
-            self.layers.append(piBLSTM(input_dim, hidden_dim, bidirectional, dropout, layer_norm))
-            input_dim = self.layers[-1].out_dim
-
-        self.output_size = self.layers[-1].out_dim
-        
+        # Stacking normal lstm layers
+        if self.num_layers[0] > 0:
+            self.lstm_layers = nn.LSTM(input_size, hidden_dim, bidirectional=self.b, 
+                                       num_layers=num_layers[0], 
+                                       dropout=dropout if self.num_layers[0] > 1 else 0)
+            out_dim = self.hidden_dim*2 if self.b else self.hidden_dim
+            
+        # Stacking piBLSTM layers
+        self.pblstm_layers = nn.ModuleList()
+        input_dim = out_dim if self.num_layers[0] > 0 else self.input_size
+        for l in range(num_layers[1]):
+            self.pblstm_layers.append(piBLSTM(input_dim, hidden_dim, bidirectional, dropout, layer_norm))
+            input_dim = self.pblstm_layers[-1].out_dim
+              
+        self.output_size = self.pblstm_layers[-1].out_dim if self.num_layers[1] > 0 else out_dim
+                                                                                    
+            
     def forward(self, x):
         """
             x - padded sequence of input (batch_size, T, input_size)
         """
         
-        for _, layer in enumerate(self.layers):
-            x = layer(x)  
+        if self.num_layers[0] > 0:
+            x, _ = self.lstm_layers(x)
+            
+        for layer in self.pblstm_layers:
+            x = layer(x)
         return x
 
 class piBLSTM(nn.Module):

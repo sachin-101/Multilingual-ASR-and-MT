@@ -49,14 +49,14 @@ class AttendAndSpell(nn.Module):
         s_i = h_0
 
         # context vector: c_i = AttentionContext(encoder_out, s_i)
-        context = self.attention_layer(encoder_output, s_i)
+        context, alphas = self.attention_layer(encoder_output, s_i)
         
         #--------------Spell----------------------#
         # concat s_i and c_i and feed to Spell
         spell_input = torch.cat([s_i, context], dim=1)
         h_1, c_1 = self.post_lstm_cell(spell_input, hidden_prev[1])
         out = self.mlp(h_1)
-        return out, [(h_0, c_0), (h_1, c_1)], context  
+        return out, [(h_0, c_0), (h_1, c_1)], context, alphas
 
 
 
@@ -82,4 +82,4 @@ class Attention(nn.Module):
         alphas = F.softmax(self.linear2(e), dim=1)    # sum(alphas) = 1, over Tx axis
 
         context = torch.bmm(alphas.squeeze(dim=2).unsqueeze(dim=1), h)  # (N, 1, Tx)*(N, Tx, n_h)->(N, 1, n_h)
-        return context.squeeze(dim=1)
+        return context.squeeze(dim=1), alphas
