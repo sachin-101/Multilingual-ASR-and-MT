@@ -1,8 +1,8 @@
 # Multilingual Speech Recognition and Machine Translation
 
-This project is developed as a part of Defense Innovation Challenge, Shaastra 2020, IIT Madras. 
+This project began as a part of finals of Defense Innovation Challenge, Shaastra 2020, IIT Madras. 
 
-Click here to see **[Problem statement](https://github.com/sachin-101/Multilingual-ASR-and-MT/blob/master/papers/problem_statement.pdf)**
+Click here to see the **[Problem statement](https://github.com/sachin-101/Multilingual-ASR-and-MT/blob/master/papers/problem_statement.pdf)**
 
 The competition is over and I have taken it as a **personal project** now.
 
@@ -24,7 +24,7 @@ The given problem statement of translating the incoming input signal and giving 
 - It is a character-based model and thus decoder outputs character sequences.
 
 <figure align="center">
-  <img src="attention_mapping.png" width="570" height="300">
+  <img src="attention_mapping.png" width="570" height="350">
   <figcaption>Spectrogram extracted from input audio and corresponding attention map</figcaption>
 </figure>
 
@@ -37,7 +37,7 @@ The given problem statement of translating the incoming input signal and giving 
 
 
 <figure align="center">
-  <img src="tensorboard_1.png" width="570" height="300">
+  <img src="tensorboard_1.png" width="670" height="400">
   <figcaption>Some Trianing Logs</figcaption>
 </figure>
 
@@ -47,10 +47,10 @@ The given problem statement of translating the incoming input signal and giving 
 - [x] Implement CTC model
 - [x] Implement attention based Encoder-Decoder model
 - [x] Add Language model
-- [] Add SpecAugment on input Spectrograms
-- [] Add Beam Search
-- [] Implement joint Attention-CTC model
-- [] Implement words, sub-words model
+- [ ] Add SpecAugment on input Spectrograms
+- [ ] Add Beam Search
+- [ ] Implement joint Attention-CTC model
+- [ ] Implement words, sub-words model
 
 
 ## Acknowledgements
