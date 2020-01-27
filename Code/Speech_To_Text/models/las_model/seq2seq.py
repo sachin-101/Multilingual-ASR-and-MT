@@ -12,6 +12,7 @@ class Seq2Seq(nn.Module):
         self.decoder = decoder
         self.tf_ratio = tf_ratio
         self.device = device
+        
 
     def forward(self, data, target):
         Ty = target.shape[1]
@@ -31,17 +32,19 @@ class Seq2Seq(nn.Module):
             ]
         context = torch.zeros((N, self.decoder.n_h)).to(self.device)
 
-        output = []        
+        output = []   
+        attention_vectors = []
+        
         for t in range(0, Ty):
             y_true = target[:, t]   
-            y_out, hidden_prev, context = self.decoder(y_in, hidden_prev, encoder_output, context)
+            y_out, hidden_prev, context, alphas = self.decoder(y_in, hidden_prev, encoder_output, context)
             output.append(y_out)
             teacher_force = random.random() < self.tf_ratio
             y_in = y_true if teacher_force else y_out.max(dim=1)[1]
+            attention_vectors.append(alphas)
         
         out = torch.stack(output, dim=1)
-        loss = F.cross_entropy(out.view(N*Ty, -1), target.view(-1))
-        return  loss, out
+        return out, attention_vectors
 
     
 if __name__ == "__main__":
@@ -59,7 +62,7 @@ if __name__ == "__main__":
     Y = torch.randint(0, vocab_size, (32, 15))
 
     s2s = Seq2Seq(encoder, decoder, tf_ratio=1, device='cpu')
-    loss, pred_out = s2s(X, Y)
-    print(loss)
+    pred_out, _ = s2s(X, Y)
+    
     print(pred_out.shape)
     

@@ -41,6 +41,5 @@ class Seq2Seq(nn.Module):
             y_in = y_true if teacher_force else y_out.max(dim=1)[1]
         
         out = torch.stack(output, dim=1)
-        loss = F.cross_entropy(out.view(N*Ty, -1), target.view(-1))
-        return  loss, out
+        return out
 
