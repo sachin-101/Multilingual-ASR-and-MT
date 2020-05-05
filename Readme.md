@@ -4,7 +4,7 @@ This project began as a part of finals of Defense Innovation Challenge, Shaastra
 
 Click here to see the **[Problem statement](https://github.com/sachin-101/Multilingual-ASR-and-MT/blob/master/papers/problem_statement.pdf)**
 
-The competition is over and I have taken it as a **personal project** now.
+The competition is over and I have taken it as a **personal project** now. **All the Neural Network architectures in this project are written from scratch** using Numpy and **PyTorch**.
 
 ## Current Status
 
